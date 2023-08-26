@@ -1,0 +1,24 @@
+body {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    height: 100vh;
+    margin: 0;
+    background-color: #f0f0f0;
+}
+
+.chart-container {
+    position: relative;
+    overflow: hidden;
+    transition: width 0.5s, height 0.5s;
+}
+
+.chart-container.enlarged {
+    width: 600px;
+    height: 600px;
+}
+
+#chartCanvas {
+    display: block;
+    margin: 0 auto;
+}
