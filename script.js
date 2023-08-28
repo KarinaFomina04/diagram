@@ -1,82 +1,119 @@
-let myCanvas = document.getElementById("myCanvas");
-myCanvas.width = 300;
-myCanvas.height = 300;
-let ctx = myCanvas.getContext("2d");
+// Модуль для работы с канвасом
+const canvasModule = (function () {
+    const canvas = document.getElementById("chartCanvas");
+    const ctx = canvas.getContext("2d");
 
-function drawLine(ctx, startX, startY, endX, endY){
-    ctx.beginPath();
-    ctx.moveTo(startX,startY);
-    ctx.lineTo(endX,endY);
-    ctx.stroke();
-}
-
-function drawArc(ctx, centerX, centerY, radius, startAngle, endAngle){
-    ctx.beginPath();
-    ctx.arc(centerX, centerY, radius, startAngle, endAngle);
-    ctx.stroke();
-}
-
-function drawPieSlice(ctx,centerX, centerY, radius, startAngle, endAngle, color ){
-    ctx.fillStyle = color;
-    ctx.beginPath();
-    ctx.moveTo(centerX,centerY);
-    ctx.arc(centerX, centerY, radius, startAngle, endAngle);
-    ctx.closePath();
-    ctx.fill();
-}
-
-drawLine(_ctx,100,100,200,200);
-drawArc(_ctx, 150,150,150, 0, Math.PI/3);
-drawPieSlice(_ctx, 150,150,150, Math.PI/2, Math.PI/2 + Math.PI/4, '#ff0000');
-var Piechart = function(options){
-    this.options = options;
-    this.canvas = options.canvas;
-    this.ctx = this.canvas.getContext("2d");
-    this.colors = options.colors;
-    this.draw = function(){
-        var total_value = 0;
-        var color_index = 0;
-        for (var categ in this.options.data){
-            var val = this.options.data[categ];
-            total_value += val;
-        }
-        var start_angle = 0;
-        for (categ in this.options.data){
-            val = this.options.data[categ];
-            var slice_angle = 2 * Math.PI * val / total_value;
-            drawPieSlice(
-                this.ctx,
-                this.canvas.width/2,
-                this.canvas.height/2,
-                Math.min(this.canvas.width/2,this.canvas.height/2),
-                start_angle,
-                start_angle+slice_angle,
-                this.colors[color_index%this.colors.length]
-            );
-            start_angle += slice_angle;
-            color_index++;
-        }
-        //drawing a white circle over the chart
-        //to create the doughnut chart
-        if (this.options.doughnutHoleSize){
-            drawPieSlice(
-                this.ctx,
-                this.canvas.width/2,
-                this.canvas.height/2,
-                this.options.doughnutHoleSize * Math.min(this.canvas.width/2,this.canvas.height/2),
-                0,
-                2 * Math.PI,
-                "#ff0000"
-            );
-        }
+    function clearCanvas() {
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
     }
-}
-var myDougnutChart = new Piechart(
-    {
-        canvas:myCanvas,
-        data:myVinyls,
-        colors:["#fde23e","#f16e23", "#57d9ff","#937e88"],
-        doughnutHoleSize:0.5
+
+    function drawSector(value, radius, startAngle, endAngle, color) {
+        const centerX = canvas.width / 2;
+        const centerY = canvas.height / 2;
+
+        ctx.beginPath();
+        ctx.moveTo(centerX, centerY);
+        ctx.arc(centerX, centerY, radius, startAngle, endAngle);
+        ctx.closePath();
+
+        ctx.fillStyle = color;
+        ctx.fill();
     }
-);
-myDougnutChart.draw();
+
+    return {
+        clearCanvas,
+        drawSector,
+    };
+})();
+
+//Модуль для работы с данными и логикой диаграммы
+const chartModule = (function (canvasModule) {
+    const chartData = generateRandomChartData();
+    const colors =  [
+        '#F2994A',
+        '#6FCF97',
+        '#9B51E0',
+        '#2F80ED',
+        '#56CCF2',
+        '#219653',
+        '#F2C94C',
+        '#EB5757'
+    ]
+
+    canvasModule.drawSector(
+        chartData[0].value,
+        chartData[0].radius,
+        0,
+        chartData[0].angle,
+        colors[0]
+    );
+
+    const chartContainer = document.querySelector(".chart-container");
+
+    chartContainer.addEventListener("click", () => {
+        chartContainer.classList.toggle("enlarged");
+        canvasModule.clearCanvas();
+        let startAngle = 0;
+        chartData.forEach((data, index) => {
+            canvasModule.drawSector(
+                data.value,
+                data.radius,
+                startAngle,
+                startAngle + data.angle,
+                colors[index]
+            );
+            startAngle += data.angle;
+        });
+    });
+
+    // function generateRandomChartData() {
+    //     const numValues = Math.floor(Math.random() * 8) + 1;
+    //     const data = [];
+    //     let totalValue = 0;
+    //     for (let i = 0; i < numValues; i++) {
+    //         const value = Math.floor(Math.random() * 100) + 1;
+    //         const radius = Math.floor(Math.random() * 100) + 50;
+    //         totalValue += value;
+    //         data.push({ value, radius });
+    //     }
+    //     data.forEach(item => item.angle = (item.value / totalValue) * 2 * Math.PI);
+    //     return data;
+    // }
+    function generateRandomChartData() {
+        const numValues = 8; // Всегда 8 значений
+        const data = [];
+        let totalValue = 0;
+
+        for (let i = 0; i < numValues; i++) {
+            const value = Math.floor(Math.random() * 100) + 1; // Случайное значение для сектора
+            totalValue += value;
+            data.push({ value });
+        }
+
+        data.forEach((item, index) => {
+            item.radius = Math.floor(Math.random() * 100) + 50; // Случайный радиус для сектора
+            item.angle = (item.value / totalValue) * 2 * Math.PI;
+            item.color = colors[index]; // Присваиваем фиксированный цвет из массива
+        });
+
+        return data;
+    }
+    // function generateRandomColors() {
+    //     const colors = [];
+    //     for (let i = 0; i < chartData.length; i++) {
+    //         colors.push(getRandomColor());
+    //     }
+    //     return colors;
+    // }
+
+    // function getRandomColor() {
+    //     const letters = "0123456789ABCDEF";
+    //     let color = "#";
+    //     for (let i = 0; i < 6; i++) {
+    //         color += letters[Math.floor(Math.random() * 16)];
+    //     }
+    //     return color;
+    // }
+})
+(canvasModule);
+chartModule()
